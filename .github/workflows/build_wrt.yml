@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Build System Setup
+      - name: Build System Setup（构建环境初始化）
         run: |
           sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
           sudo -E apt -yqq install dos2unix
@@ -34,19 +34,19 @@ jobs:
           sudo -E apt -yqq clean
           sudo -E systemctl daemon-reload
 
-      - name: Checkout
+      - name: Checkout（拉取代码仓库）
         uses: actions/checkout@v6.0.2
 
-      - name: Set Build Date and Timezone
+      - name: Set Build Date and Timezone（设置构建时间与时区）
         run: |
           sudo -E timedatectl set-timezone "Asia/Shanghai"
           export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
 
-      - name: Pre Clone
+      - name: Pre Clone（预克隆源码）
         run: ./wrt_core/pre_clone_action.sh ${{ inputs.model }}
 
-      - name: Cache Dependencies
+      - name: Cache Dependencies（缓存依赖文件）
         uses: actions/cache@v5.0.2
         with:
           path: |
@@ -56,7 +56,7 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-${{ hashFiles('**/repo_flag') }}-
 
-      - name: Refresh the cache
+      - name: Refresh the cache（刷新缓存时间戳）
         run: |
           if [ -d "./action_build/staging_dir" ]; then
             find "./action_build/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r dir; do
@@ -64,7 +64,7 @@ jobs:
             done
           fi
 
-      - name: Machine Information (Pre-build)
+      - name: Machine Information (Pre-build)（构建前系统资源监控）
         run: |
           echo "=============== Pre-build Snapshot ==============="
           echo "Time: $(date '+%F %T %Z')"
@@ -91,10 +91,10 @@ jobs:
           du -sh ./firmware 2>/dev/null || true
           echo "=================================================="
 
-      - name: Build Firmware
+      - name: Build Firmware（开始编译固件）
         run: ./build.sh ${{ inputs.model }}
 
-      - name: Delete Old Cache
+      - name: Delete Old Cache（清理旧缓存）
         run: |
           # 获取缓存列表并删除
           gh cache list --key ${{ matrix.os }}-${{ hashFiles('**/repo_flag') }}- --json key --jq '.[] | .key' | while read -r key; do
@@ -105,7 +105,7 @@ jobs:
           echo "ccache: $(du -sh ./action_build/.ccache | cut -f 1)"
           echo "staging: $(du -sh ./action_build/staging_dir | cut -f 1)"
 
-      - name: Machine Information (Post-build)
+      - name: Machine Information (Post-build)（构建后系统资源监控）
         run: |
           echo "=============== Post-build Snapshot ==============="
           echo "Time: $(date '+%F %T %Z')"
@@ -131,7 +131,7 @@ jobs:
           echo "Firmware file count: $(ls -1 ./firmware 2>/dev/null | wc -l)"
           echo "===================================================="
 
-      - name: Upload Firmware
+      - name: Upload Firmware（上传固件产物）
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.BUILD_DATE }}_${{ inputs.model }}
