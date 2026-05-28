@@ -47,3 +47,9 @@ PROJECT_MIRRORS_FILE="$BUILD_DIR/scripts/projectsmirrors.json"
 if [ -f "$PROJECT_MIRRORS_FILE" ]; then
     sed -i '/.cn\//d; /tencent/d; /aliyun/d' "$PROJECT_MIRRORS_FILE"
 fi
+
+# ====================== 添加 SSR-Plus 修改版插件 ======================
+cd $BUILD_DIR || exit 1
+git clone https://github.com/fw876/helloworld.git package/helloworld
+./scripts/feeds update -a
+./scripts/feeds install -a
